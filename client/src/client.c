@@ -30,15 +30,16 @@ int main(void)
 		log_info(logger,"No se pudo crear config!");
 		abort();
 	}
-	else{
+
 	// Usando el config creado previamente, leemos los valores del config y los 
 	// dejamos en las variables 'ip', 'puerto' y 'valor'
 		valor = config_get_string_value(config, "CLAVE");
 		ip=config_get_string_value(config,"IP");
-		puerto=config_get_int_value(config,"PUERTO");
+		puerto=config_get_string_value(config,"PUERTO");
 	// Loggeamos el valor de config
 		log_info(logger,"el valor de la key es: %s",valor);
-	}
+		log_info(logger,"IP: %s, puerto: %s, clave: %s",ip,puerto,valor);
+	
 
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
@@ -53,6 +54,7 @@ int main(void)
 	conexion = crear_conexion(ip, puerto);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
+	enviar_mensaje(valor,conexion);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion);
@@ -91,7 +93,7 @@ void leer_consola(t_log* logger)
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
 	while(strcmp(leido, "") != 0){ //mientras leido sea distinto a un string vacío
         add_history(leido); //si leido existe, se agrega a un historial (para esto se agrego un biblioteca)
-        log_info(logger,"%s\n", leido);
+        log_info(logger,"%s", leido);
         free(leido);
 		leido = readline("> ");
     }
@@ -107,9 +109,22 @@ void paquete(int conexion)
 	t_paquete* paquete;
 
 	// Leemos y esta vez agregamos las lineas al paquete
+	paquete = crear_paquete();
 
+	leido = readline("> ");
+	while(strcmp(leido, "me muero") != 0){ 
+
+        agregar_a_paquete(paquete,leido,strlen(leido)+1);
+
+        free(leido);
+		leido = readline("> ");
+    }
+	free(leido);
+
+	enviar_paquete(paquete,conexion);
 
 	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
+	eliminar_paquete(paquete);
 	
 }
 
@@ -119,4 +134,5 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 	  con las funciones de las commons y del TP mencionadas en el enunciado */
 	log_destroy(logger);
 	config_destroy(config);
+	liberar_conexion(conexion);
 }
